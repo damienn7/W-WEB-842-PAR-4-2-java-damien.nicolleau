@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.RestTemplate;
 
 import org.springframework.http.ResponseEntity;
@@ -57,15 +58,81 @@ public class WebController {
         return "login";
     }
 
-    @GetMapping("/user")
-    public String adminPage() {
+    @GetMapping("/{restaurant}/admin")
+    public String adminPage(@PathVariable String restaurant, Model model, HttpServletResponse response) {
+                
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
+
+        if (restaurant != name) {
+            return "404";
+        }
+        
+        if (userRepository.findByUsername(restaurant) != null) {
+            String token = jwtUtils.generateToken(restaurant);
+            Cookie cookie = new Cookie("token", token);
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+        } else {
+            String token = jwtUtils.generateToken(restaurant);
+            Cookie cookie = new Cookie("token", "undefined");
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+            return "login";
+        }
+        model.addAttribute("user", userRepository.findByUsername(restaurant));
         return "admin";
     }
 
+    @GetMapping("/{restaurant}")
+    public String restaurantPage(@PathVariable String restaurant, Model model,HttpServletResponse response) {
+        if (userRepository.findByUsername(restaurant) == null) {
+            return "404";
+        }
+        model.addAttribute("user", userRepository.findByUsername(restaurant));
+        return "restaurant";
+    }
     
-    @GetMapping("/configuration")
-    public String configPage() {
+    @GetMapping("/{restaurant}/configuration")
+    public String configPage(@PathVariable String restaurant, Model model,HttpServletResponse response) {
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
+
+        if (userRepository.findByUsername(restaurant).getUsername() != userRepository.findByUsername(name).getUsername()) {
+            return "404";
+        }
+
+        if (userRepository.findByUsername(restaurant) != null) {
+            String token = jwtUtils.generateToken(restaurant);
+            Cookie cookie = new Cookie("token", token);
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+        } else {
+            String token = jwtUtils.generateToken(restaurant);
+            Cookie cookie = new Cookie("token", "undefined");
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+            return "login";
+        }
+        model.addAttribute("user", userRepository.findByUsername(restaurant));
         return "config";
+    }
+
+    @GetMapping("/redirect")
+    public String redirectPage() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
+        
+        if (userRepository.findByUsername(name).getIsConfigured() == true) {
+            return "redirect:/"+ name + "/admin"; // Redirection vers la page d'accueil après succès                    
+        } else {
+            return "redirect:/"+ name +"/configuration"; // Redirection vers la page d'accueil après succès
+        }
     }
     
     @PostMapping("/login")
@@ -91,15 +158,10 @@ public class WebController {
 
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
             if (authentication.isAuthenticated()) {
-                String token = jwtUtils.generateToken(username);
-                Cookie cookie = new Cookie("token", token);
-                cookie.setHttpOnly(true);
-                cookie.setPath("/");
-                response.addCookie(cookie);
                 if (userRepository.findByUsername(username).getIsConfigured()) {
-                    return "redirect:/user"; // Redirection vers la page d'accueil après succès                    
+                    return "redirect:/"+username+"/admin"; // Redirection vers la page d'accueil après succès                    
                 } else {
-                    return "redirect:/config"; // Redirection vers la page d'accueil après succès
+                    return "redirect:/"+username+"/config"; // Redirection vers la page d'accueil après succès
                 }
             }
 

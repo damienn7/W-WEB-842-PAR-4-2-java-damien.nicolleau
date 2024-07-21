@@ -4,6 +4,6 @@
 		<title>Page admin</title>
 	</head>
 	<body>
-		<h1>Page admin</h1>
+		<h1 th:if="${user != null}">Page admin - <span th:text="${user.displayName}"></span></h1>
 	</body>
 </html>
