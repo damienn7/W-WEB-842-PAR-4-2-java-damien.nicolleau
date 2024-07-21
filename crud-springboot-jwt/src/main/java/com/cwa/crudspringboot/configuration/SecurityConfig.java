@@ -68,12 +68,12 @@ public class SecurityConfig {
 
         http
         .authorizeHttpRequests((requests) -> requests
-            .requestMatchers("/", "/login", "/signup","/css/**", "/js/**", "/images/**", "/api/auth/*").permitAll()
+            .requestMatchers("/", "/*", "/login", "/signup","/css/**", "/js/**", "/images/**", "/api/auth/*").permitAll()
             .anyRequest().authenticated()
         )
         .formLogin((form) -> form
             .loginPage("/login")
-            .defaultSuccessUrl("/user")
+            .defaultSuccessUrl("/redirect")
             .permitAll()
         )
         .logout((logout) -> logout.permitAll());
