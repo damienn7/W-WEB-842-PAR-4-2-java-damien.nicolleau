@@ -11,6 +11,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.CookieClearingLogoutHandler;
+
 
 import com.cwa.crudspringboot.filter.JwtFilter;
 import com.cwa.crudspringboot.service.CustomUserDetailsService;
@@ -66,6 +68,8 @@ public class SecurityConfig {
         //     .logout()
         //         .permitAll();
 
+        CookieClearingLogoutHandler cookies = new CookieClearingLogoutHandler("JSESSIONID");
+
         http
         .authorizeHttpRequests((requests) -> requests
             .requestMatchers("/", "/*", "/login", "/signup","/css/**", "/js/**", "/images/**", "/api/auth/*").permitAll()
@@ -76,7 +80,14 @@ public class SecurityConfig {
             .defaultSuccessUrl("/redirect")
             .permitAll()
         )
-        .logout((logout) -> logout.permitAll());
+        .logout((logout) -> logout
+            .logoutSuccessUrl("/")
+            .deleteCookies("token","JSESSIONID")
+            .clearAuthentication(true)
+            .invalidateHttpSession(true)
+            .addLogoutHandler(cookies)
+            .permitAll()
+            );
 
         return http.build();
     }

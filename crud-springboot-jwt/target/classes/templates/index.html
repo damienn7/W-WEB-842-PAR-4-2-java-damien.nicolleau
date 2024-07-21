@@ -2,8 +2,32 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
 	<head>
 		<title>Page d'accueil</title>
+		<link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 	</head>
 	<body>
 		<h1>Page d'accueil</h1>
+		<nav>
+			
+			<div class="button-group" th:if="${current_user == null}">
+				<a href="/login">Login</a>
+				<a href="/signup">Register</a>
+			</div>
+			<div class="button-group" th:if="${current_user != null}">
+				Logged user : <span th:text="${current_user.username}"></span>
+				Role : <span th:text="${current_user.role}"></span>
+				<a href="/logout">Logout</a>
+			</div>
+		</nav>
+		<ul>
+			<li th:each="user : ${users}">
+				<a th:text="${user.displayName}" th:href="@{'/' + ${user.username}}"></a>
+				<div class="button-group" th:if="${current_user != null}">
+					<div th:if="${current_user.username == user.username}">
+						<a href="@{/{user.username}/admin}">Go to admin page</a>
+						<a href="@{/{user.username}/configuration}">Go to configuration page</a>
+					</div>
+				</div>
+			</li>
+		</ul>
 	</body>
 </html>
