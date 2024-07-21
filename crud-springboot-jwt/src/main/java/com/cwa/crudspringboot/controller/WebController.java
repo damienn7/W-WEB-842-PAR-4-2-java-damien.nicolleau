@@ -20,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,6 +44,7 @@ import com.cwa.crudspringboot.entity.User;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
     
 @Controller
 @RequiredArgsConstructor
@@ -52,7 +54,31 @@ public class WebController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
-    
+
+    @GetMapping("/logout")
+    public String performLogout(Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
+        Cookie jsessionCookieRemove = new Cookie("JSESSIONID", "");
+        jsessionCookieRemove.setMaxAge(0);
+        response.addCookie(jsessionCookieRemove);
+
+        Cookie tokenCookieRemove = new Cookie("token", "");
+        tokenCookieRemove.setMaxAge(0);
+        response.addCookie(tokenCookieRemove);
+        return "redirect:/";
+    }
+
+    @GetMapping("/")
+    public String indexPage(Model model) {
+        model.addAttribute("users", userRepository.findAll());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
+        if (userRepository.findByUsername(name) != null) {
+            model.addAttribute("current_user", userRepository.findByUsername(name));
+        }
+        return "index";
+    }
+
+
     @GetMapping("/login")
     public String loginPage() {
         return "login";
@@ -64,7 +90,7 @@ public class WebController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String name = auth.getName();
 
-        if (restaurant != name) {
+        if (userRepository.findByUsername(restaurant).getUsername() != userRepository.findByUsername(name).getUsername()) {
             return "404";
         }
         
